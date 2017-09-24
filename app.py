@@ -1,5 +1,5 @@
-import json
-from flask import abort, Flask, jsonify, request
+from flask import abort, Flask, jsonify, make_response, request
+
 import helper_functions
 from statistic_collection import StatisticCollection
 
@@ -13,7 +13,7 @@ def need_authorization(func):
     def wrapper(*args, **kwargs):
         auth = request.authorization
         if not auth or auth.username not in users or auth.password != users[auth.username]:
-            return abort(401)
+            return abort(make_response('Pls login to use service.', 401))
         return func(*args, **kwargs)
     return wrapper
 
@@ -24,15 +24,13 @@ def index():
     Welcome to homework
     Supported RESTfull API:
      - Getting a random word by a GET request to http:/<address>/api/v1.0/random_word
-        return string
-     - Getting a wiki article for word by a GET request to http:/<address>/api/v1.0/wiki
-        provide word by json data-format {'word': 'Ninja'}
+        need authorization, return string
+     - Getting a wiki article for word by a GET request to http:/<address>/api/v1.0/wiki?search=<word>
         return unicode of article in WikiText format
-     - Getting N most popular for word by a GET request to http:/<address>/api/v1.0/wiki/most_popular
-        provide N by json data-format {'N': 3}
+     - Getting N most popular for word by a GET request to http:/<address>/api/v1.0/wiki/most_popular?N=<integer>
         return json with list of most popular
      - Getting joke about Chuck Norris most popular for word by a GET request to http:/<address>/api/v1.0/chuck_norris
-        if needed pls provide firstName and lastName by json data-format {"firstName":"John", "lastName":"Pupkin"}
+        if needed provide firstName to replace "Chuck" and lastName to replace "Norris" in joke 
         return string
     """
     return text
@@ -43,23 +41,18 @@ def index():
 def get_random_word():
     word = helper_functions.get_random_word()
     if not word:
-        abort(400)
+        abort(make_response('Cannot get random word now. Pls try later.', 404))
     return word
 
 
 @app.route('/api/v1.0/wiki', methods=['GET'])
 def get_wiki_for_word():
-    request.get_data()
-    try:
-        data = json.loads(request.data)
-    except ValueError:
-        abort(400)
-    if not data or 'word' not in data or not isinstance(data.get('word'), unicode):
-        abort(400)
-    word = data.get('word')
+    word = request.args.get('search')
+    if not word:
+        abort(make_response('Pls define "search" parameter', 400))
     article = helper_functions.get_wiki_article(word)
     if not article:
-        abort(404)
+        abort(make_response('Cannot find wiki article for specified word.', 404))
     # Save to collection
     wiki_collection.save(word)
     return article
@@ -67,39 +60,25 @@ def get_wiki_for_word():
 
 @app.route('/api/v1.0/wiki/most_popular', methods=['GET'])
 def get_most_popular():
-    request.get_data()
-    try:
-        data = json.loads(request.data)
-    except ValueError:
-        abort(400)
-    if not data or 'N' not in data or not isinstance(data.get('N'), int):
-        abort(400)
-    # Get N most popular from collection
-    popular = wiki_collection.get_most_popular(data.get('N'))
+    n = request.args.get('N')
+    if not n or not n.isdigit():
+        abort(make_response('Pls define integer "N" parameter', 400))
+    # Get n most popular from collection
+    popular = wiki_collection.get_most_popular(int(n))
     # If collection statistic is empty popular will be empty too
     if not popular:
-        abort(400)
+        abort(make_response('Cannot get most popular now. Pls try later.', 404))
     return jsonify(popular)
 
 
 @app.route('/api/v1.0/chuck_norris', methods=['GET'])
 def get_joke():
-    request.get_data()
-    try:
-        data = json.loads(request.data)
-    except ValueError:
-        abort(400)
+    first_name = request.args.get('firstName')
+    last_name = request.args.get('lastName')
     # Get joke
-    first_name = None
-    last_name = None
-    if request.data:
-        if 'firstName' in data:
-            first_name = data.get('firstName')
-        if 'lastName' in data:
-            last_name = data.get('lastName')
     joke = helper_functions.get_chuck_norris_joke(first_name, last_name)
     if not joke:
-        abort(400)
+        abort(make_response('Cannot get joke now. Pls try later.', 404))
     return joke
 
 
