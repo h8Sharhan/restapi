@@ -6,6 +6,16 @@ from statistic_collection import StatisticCollection
 
 app = Flask(__name__)
 wiki_collection = StatisticCollection()
+users = {'user': 'qwe123'}
+
+
+def need_authorization(func):
+    def wrapper(*args, **kwargs):
+        auth = request.authorization
+        if not auth or auth.username not in users or auth.password != users[auth.username]:
+            return abort(401)
+        return func(*args, **kwargs)
+    return wrapper
 
 
 @app.route('/')
@@ -29,6 +39,7 @@ def index():
 
 
 @app.route('/api/v1.0/random_word', methods=['GET'])
+@need_authorization
 def get_random_word():
     word = helper_functions.get_random_word()
     if not word:
