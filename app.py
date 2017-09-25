@@ -5,7 +5,7 @@ from statistic_collection import StatisticCollection
 
 
 app = Flask(__name__)
-wiki_collection = StatisticCollection()
+# Dict for user accounts
 users = {'user': 'qwe123'}
 
 
@@ -25,11 +25,11 @@ def index():
     Supported RESTfull API:
      - Getting a random word by a GET request to http:/<address>/api/v1.0/random_word
         need authorization, return string
-     - Getting a wiki article for word by a GET request to http:/<address>/api/v1.0/wiki?search=<word>
+     - Getting a wiki article for word by a GET request to http:/<address>/api/v1.0/wiki/<string:word>
         return unicode of article in WikiText format
-     - Getting N most popular for word by a GET request to http:/<address>/api/v1.0/wiki/most_popular?N=<integer>
+     - Getting N most popular for word by a GET request to http:/<address>/api/v1.0/wiki/most_popular/<int:N>
         return json with list of most popular
-     - Getting joke about Chuck Norris most popular for word by a GET request to http:/<address>/api/v1.0/chuck_norris
+     - Getting joke about Chuck Norris most popular for word by a GET request to http:/<address>/api/v1.0/joke
         if needed provide firstName to replace "Chuck" and lastName to replace "Norris" in joke 
         return string
     """
@@ -41,46 +41,41 @@ def index():
 def get_random_word():
     word = helper_functions.get_random_word()
     if not word:
-        abort(make_response('Cannot get random word now. Pls try later.', 404))
-    return word
+        return jsonify({'status': 'fail'})
+    return jsonify({'status': 'success', 'result': word})
 
 
-@app.route('/api/v1.0/wiki', methods=['GET'])
-def get_wiki_for_word():
-    word = request.args.get('search')
-    if not word:
-        abort(make_response('Pls define "search" parameter', 400))
-    article = helper_functions.get_wiki_article(word)
-    if not article:
-        abort(make_response('Cannot find wiki article for specified word.', 404))
+@app.route('/api/v1.0/wiki/<string:word>', methods=['GET'])
+def get_wiki_for_word(word):
     # Save to collection
     wiki_collection.save(word)
-    return article
+    article = helper_functions.get_wiki_article(word)
+    if not article:
+        return jsonify({'status': 'fail'})
+    return jsonify({'status': 'success', 'result': article})
 
 
-@app.route('/api/v1.0/wiki/most_popular', methods=['GET'])
-def get_most_popular():
-    n = request.args.get('N')
-    if not n or not n.isdigit():
-        abort(make_response('Pls define integer "N" parameter', 400))
+@app.route('/api/v1.0/wiki/most_popular/<int:n>', methods=['GET'])
+def get_most_popular(n):
     # Get n most popular from collection
-    popular = wiki_collection.get_most_popular(int(n))
+    popular = wiki_collection.get_most_popular(n)
     # If collection statistic is empty popular will be empty too
     if not popular:
-        abort(make_response('Cannot get most popular now. Pls try later.', 404))
-    return jsonify(popular)
+        return jsonify({'status': 'fail'})
+    return jsonify({'status': 'success', 'result': popular})
 
 
-@app.route('/api/v1.0/chuck_norris', methods=['GET'])
+@app.route('/api/v1.0/joke', methods=['GET'])
 def get_joke():
-    first_name = request.args.get('firstName')
-    last_name = request.args.get('lastName')
     # Get joke
-    joke = helper_functions.get_chuck_norris_joke(first_name, last_name)
+    joke = helper_functions.get_chuck_norris_joke(request.args.get('firstName'), request.args.get('lastName'))
     if not joke:
-        abort(make_response('Cannot get joke now. Pls try later.', 404))
-    return joke
+        return jsonify({'status': 'fail'})
+    return jsonify({'status': 'success', 'result': joke})
 
 
 if __name__ == '__main__':
+    # Initialize collection for wiki requests
+    wiki_collection = StatisticCollection()
+    # Run app
     app.run(debug=True)
