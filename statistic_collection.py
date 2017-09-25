@@ -3,7 +3,7 @@ from operator import itemgetter
 from os.path import exists
 from yaml import dump, load
 
-log = logging.getLogger('app')
+logger = logging.getLogger(__name__)
 
 
 class StatisticCollection(object):
@@ -18,12 +18,12 @@ class StatisticCollection(object):
         self._save_collection_to_file()
 
     def _save_collection_to_file(self):
-        log.info('Save collection to file %s' % self.file_name)
+        logger.info('Save collection to file %s' % self.file_name)
         with open(self.file_name, 'w+') as yaml_stor:
             dump(self._statistic_dict, yaml_stor, default_flow_style=False)
 
     def _load_collection_from_file(self):
-        log.info('Load collection from file %s' % self.file_name)
+        logger.info('Load collection from file %s' % self.file_name)
         with open(self.file_name, 'r') as yaml_stor:
             self._statistic_dict = load(yaml_stor)
 
@@ -39,14 +39,8 @@ class StatisticCollection(object):
         if self._statistic_dict:
             return [k for k, v in sorted(self._statistic_dict.iteritems(), key=itemgetter(1), reverse=True)[:number]]
 
-    def save_stor_to_file(self):
-        with open(self.file_name, 'w+') as yaml_stor:
-            yaml.dump( self._statistic_dict, yaml_stor, default_flow_style=False)
-
-
 
 if __name__ == '__main__':
     test_collection = StatisticCollection()
     test_collection.save('Ninja')
-    test_collection._save_collection_to_file()
     print test_collection.get_most_popular(2)

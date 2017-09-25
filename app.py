@@ -1,17 +1,16 @@
+import logging
 from flask import abort, Flask, jsonify, make_response, request
 
-from helper_functions import *
+import helper_functions
 from statistic_collection import StatisticCollection
 
 # Dict for user accounts
 USERS = {'user': 'qwe123'}
 
-
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s (%(lineno)s) - %(levelname)s: %(message)s",
+                    datefmt='%Y.%m.%d %H:%M:%S')
 app = Flask('app')
-app.logger.setLevel('INFO')
-
-# Initialize collection for wiki requests
-wiki_collection = StatisticCollection()
 
 
 def need_authorization(func):
@@ -45,8 +44,8 @@ def index():
 @need_authorization
 def get_random_word():
     try:
-        word = get_random_word()
-    except (ConnectionExternalApiError, ExternalApiError):
+        word = helper_functions.get_random_word()
+    except (helper_functions.ConnectionExternalApiError, helper_functions.ExternalApiError):
         return jsonify({'status': 'fail'})
     return jsonify({'status': 'success', 'result': word})
 
@@ -56,8 +55,8 @@ def get_wiki_for_word(word):
     # Save to collection
     wiki_collection.save(word)
     try:
-        article = get_wiki_article(word)
-    except (ConnectionExternalApiError, ExternalApiError):
+        article = helper_functions.get_wiki_article(word)
+    except (helper_functions.ConnectionExternalApiError, helper_functions.ExternalApiError):
         return jsonify({'status': 'fail'})
     return jsonify({'status': 'success', 'result': article})
 
@@ -71,12 +70,14 @@ def get_most_popular(n):
 @app.route('/api/v1.0/joke', methods=['GET'])
 def get_joke():
     try:
-        joke = get_chuck_norris_joke(request.args.get('firstName'), request.args.get('lastName'))
-    except (ConnectionExternalApiError, ExternalApiError):
+        joke = helper_functions.get_chuck_norris_joke(request.args.get('firstName'), request.args.get('lastName'))
+    except (helper_functions.ConnectionExternalApiError, helper_functions.ExternalApiError):
         return jsonify({'status': 'fail'})
     return jsonify({'status': 'success', 'result': joke})
 
 
 if __name__ == '__main__':
+    # Initialize collection for wiki requests
+    wiki_collection = StatisticCollection()
     # Run app
-    app.run(debug=True)
+    app.run()
