@@ -1,19 +1,27 @@
+import atexit
 import logging
+from functools import wraps
 from flask import abort, Flask, jsonify, make_response, request
 
+
+import exceptions
 import helper_functions
 from statistic_collection import StatisticCollection
+
 
 # Dict for user accounts
 USERS = {'user': 'qwe123'}
 
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s (%(lineno)s) - %(levelname)s: %(message)s",
                     datefmt='%Y.%m.%d %H:%M:%S')
+
 app = Flask('app')
 
 
 def need_authorization(func):
+    wraps(func)
     def wrapper(*args, **kwargs):
         auth = request.authorization
         if not auth or auth.username not in USERS or auth.password != USERS[auth.username]:
@@ -45,19 +53,19 @@ def index():
 def get_random_word():
     try:
         word = helper_functions.get_random_word()
-    except (helper_functions.ConnectionExternalApiError, helper_functions.ExternalApiError):
+    except exceptions.ExternalApiError:
         return jsonify({'status': 'fail'})
     return jsonify({'status': 'success', 'result': word})
 
 
 @app.route('/api/v1.0/wiki/<string:word>', methods=['GET'])
 def get_wiki_for_word(word):
-    # Save to collection
-    wiki_collection.save(word)
     try:
         article = helper_functions.get_wiki_article(word)
-    except (helper_functions.ConnectionExternalApiError, helper_functions.ExternalApiError):
+    except exceptions.ExternalApiError:
         return jsonify({'status': 'fail'})
+    # Save to collection
+    wiki_collection.save(word)
     return jsonify({'status': 'success', 'result': article})
 
 
@@ -71,13 +79,14 @@ def get_most_popular(n):
 def get_joke():
     try:
         joke = helper_functions.get_chuck_norris_joke(request.args.get('firstName'), request.args.get('lastName'))
-    except (helper_functions.ConnectionExternalApiError, helper_functions.ExternalApiError):
+    except exceptions.ExternalApiError:
         return jsonify({'status': 'fail'})
     return jsonify({'status': 'success', 'result': joke})
 
 
 if __name__ == '__main__':
-    # Initialize collection for wiki requests
+    # Create collection for wiki requests
     wiki_collection = StatisticCollection()
+    atexit.register(wiki_collection.save_collection_to_file)
     # Run app
     app.run()

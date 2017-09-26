@@ -2,7 +2,8 @@ import logging
 import requests
 from json import loads
 
-logger = logging.getLogger(__name__)
+import exceptions
+
 
 # URLs
 RANDOM_WORD_URL = 'http://setgetgo.com//randomword//get.php'
@@ -12,13 +13,7 @@ WIKI_URL = 'https://en.wikipedia.org//w//api.php?action=query&titles=%s&prop=rev
 CHUCK_NORRIS_JOKE_URL = 'http://api.icndb.com//jokes//random?escape=javascript'
 
 
-# Simply exceptions to handle errors with external API
-class ConnectionExternalApiError(Exception):
-    pass
-
-
-class ExternalApiError(Exception):
-    pass
+logger = logging.getLogger(__name__)
 
 
 # Simplify method to send get request and handle it exceptions
@@ -26,16 +21,16 @@ def _get_request(url):
     try:
         return requests.get(url)
     except (requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError) as e:
-        logger.warning('Failed connect to %s' % url)
-        raise ConnectionExternalApiError('Failed connect to %s due to %s' % (url, e))
+        logger.warning('Failed connect to %s', url)
+        raise exceptions.ExternalApiConnectionError
 
 
 # Get random word
 def get_random_word():
     response = _get_request(RANDOM_WORD_URL)
     if response.status_code != requests.codes.ok or not response.text:
-        logger.warning('Failed to get random word code:%s response:%s' % (response.status_code, response.text))
-        raise ExternalApiError('Failed to get random word code:%s response:%s' % (response.status_code, response.text))
+        logger.warning('Failed to get random word code:%s response:%s', response.status_code, response.text)
+        raise exceptions.ExternalApiFetchError
     return response.text
 
 
@@ -43,8 +38,8 @@ def get_random_word():
 def get_wiki_article(word):
     response = _get_request(WIKI_URL % word)
     if response.status_code != requests.codes.ok:
-        logger.warning('Failed to get wiki article for word:%s code:%s' % (word, response.status_code))
-        raise ExternalApiError('Failed to get wiki article for word:%s code:%s' % (word, response.status_code))
+        logger.warning('Failed to get wiki article for word:%s code:%s', word, response.status_code)
+        raise exceptions.ExternalApiFetchError
     # Load json data
     data = loads(response.text)
     # Parse data to get text of article
@@ -52,8 +47,8 @@ def get_wiki_article(word):
         page_id = data['query']['pages'].keys()[0]
         text = data['query']['pages'][page_id]['revisions'][0]['*']
     except (KeyError, IndexError):
-        logger.warning('Failed to parse wiki response data:%s' % data)
-        raise ExternalApiError('Failed to parse wiki response data:%s' % data)
+        logger.warning('Failed to parse wiki response data:%s', data)
+        raise exceptions.ExternalApiParseError
     # Return unicode string in WikiText format
     return text
 
@@ -69,12 +64,12 @@ def get_chuck_norris_joke(first_name=None, last_name=None):
             url = url + '&lastName=' + last_name
     response = _get_request(url)
     if response.status_code != requests.codes.ok:
-        logger.warning('Failed to get joke, code:%s response:%s' % (response.status_code, response.text))
-        raise ExternalApiError('Failed to get joke code:%s response:%s' % (response.status_code, response.text))
+        logger.warning('Failed to get joke, code:%s response:%s', response.status_code, response.text)
+        raise exceptions.ExternalApiFetchError
     json_data = response.json()
     if json_data['type'] != 'success':
-        logger.warning('Failed to get joke, status:%s' % json_data['type'])
-        raise ExternalApiError('Failed to get joke status:%s' % json_data['type'])
+        logger.warning('Failed to get joke, status:%s', json_data['type'])
+        raise exceptions.ExternalApiFetchError
     return json_data['value']['joke']
 
 
