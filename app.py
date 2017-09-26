@@ -54,7 +54,7 @@ def get_random_word():
     try:
         word = helper_functions.get_random_word()
     except external_api_exceptions.ExternalApiError:
-        return abort(make_response('Failed to get random word from resource', 503))
+        return abort(make_response('Failed get random word from resource', 503))
     return jsonify({'status': 'success', 'result': word})
 
 
@@ -63,10 +63,10 @@ def get_wiki_for_word(word):
     try:
         article = helper_functions.get_wiki_article(word)
     except external_api_exceptions.ExternalApiParseError:
-        return abort(make_response('Failed to get wiki article for given word', 404))
+        return abort(make_response('Failed get wiki article for given word', 404))
     # all other exceptions
     except external_api_exceptions.ExternalApiError:
-        return abort(make_response('Failed to get article from resource', 503))
+        return abort(make_response('Failed get article from resource', 503))
     # Save to collection
     wiki_collection.save(word)
     return jsonify({'status': 'success', 'result': article})
@@ -83,7 +83,7 @@ def get_joke():
     try:
         joke = helper_functions.get_chuck_norris_joke(request.args.get('firstName'), request.args.get('lastName'))
     except external_api_exceptions.ExternalApiError:
-        return abort('Failed to get joke from resource', 503)
+        return abort('Failed get joke from resource', 503)
     return jsonify({'status': 'success', 'result': joke})
 
 
