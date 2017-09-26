@@ -4,7 +4,7 @@ from functools import wraps
 from flask import abort, Flask, jsonify, make_response, request
 
 
-import exceptions
+import external_api_exceptions
 import helper_functions
 from statistic_collection import StatisticCollection
 
@@ -53,7 +53,7 @@ def index():
 def get_random_word():
     try:
         word = helper_functions.get_random_word()
-    except exceptions.ExternalApiError:
+    except external_api_exceptions.ExternalApiError:
         return jsonify({'status': 'fail'})
     return jsonify({'status': 'success', 'result': word})
 
@@ -62,7 +62,7 @@ def get_random_word():
 def get_wiki_for_word(word):
     try:
         article = helper_functions.get_wiki_article(word)
-    except exceptions.ExternalApiError:
+    except external_api_exceptions.ExternalApiError:
         return jsonify({'status': 'fail'})
     # Save to collection
     wiki_collection.save(word)
@@ -79,7 +79,7 @@ def get_most_popular(n):
 def get_joke():
     try:
         joke = helper_functions.get_chuck_norris_joke(request.args.get('firstName'), request.args.get('lastName'))
-    except exceptions.ExternalApiError:
+    except external_api_exceptions.ExternalApiError:
         return jsonify({'status': 'fail'})
     return jsonify({'status': 'success', 'result': joke})
 
