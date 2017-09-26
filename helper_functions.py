@@ -56,11 +56,10 @@ def get_wiki_article(word):
 def get_chuck_norris_joke(first_name=None, last_name=None):
     url = CHUCK_NORRIS_JOKE_URL
     # Prepare url
-    if first_name or last_name:
-        if first_name:
-            url = url + '&firstName=' + first_name
-        if last_name:
-            url = url + '&lastName=' + last_name
+    if first_name:
+        url += '&firstName=' + first_name
+    if last_name:
+        url += '&lastName=' + last_name
     response = _get_request(url)
     if response.status_code != requests.codes.ok:
         logger.warning('Failed to get joke, code:%s response:%s', response.status_code, response.text)

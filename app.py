@@ -21,7 +21,7 @@ app = Flask('app')
 
 
 def need_authorization(func):
-    wraps(func)
+    @wraps(func)
     def wrapper(*args, **kwargs):
         auth = request.authorization
         if not auth or auth.username not in USERS or auth.password != USERS[auth.username]:
@@ -35,13 +35,13 @@ def index():
     text = """
     Welcome to homework
     Supported RESTfull API:
-     - Getting a random word by a GET request to http:/<address>/api/v1.0/random_word
+     - Getting a random word by a GET request to http://<address>/api/v1.0/random_word
         need authorization, return string
-     - Getting a wiki article for word by a GET request to http:/<address>/api/v1.0/wiki/<string:word>
+     - Getting a wiki article for word by a GET request to http://<address>/api/v1.0/wiki/<string:word>
         return unicode of article in WikiText format
-     - Getting N most popular for word by a GET request to http:/<address>/api/v1.0/wiki/most_popular/<int:N>
+     - Getting N most popular for word by a GET request to http://<address>/api/v1.0/wiki/most_popular/<int:N>
         return json with list of most popular
-     - Getting joke about Chuck Norris most popular for word by a GET request to http:/<address>/api/v1.0/joke
+     - Getting joke about Chuck Norris most popular for word by a GET request to http://<address>/api/v1.0/joke
         if needed provide firstName to replace "Chuck" and lastName to replace "Norris" in joke 
         return string
     """
@@ -54,7 +54,7 @@ def get_random_word():
     try:
         word = helper_functions.get_random_word()
     except external_api_exceptions.ExternalApiError:
-        return jsonify({'status': 'fail'})
+        return abort(make_response('Failed to get random word from resource', 503))
     return jsonify({'status': 'success', 'result': word})
 
 
@@ -62,8 +62,11 @@ def get_random_word():
 def get_wiki_for_word(word):
     try:
         article = helper_functions.get_wiki_article(word)
+    except external_api_exceptions.ExternalApiParseError:
+        return abort(make_response('Failed to get wiki article for given word', 404))
+    # all other exceptions
     except external_api_exceptions.ExternalApiError:
-        return jsonify({'status': 'fail'})
+        return abort(make_response('Failed to get article from resource', 503))
     # Save to collection
     wiki_collection.save(word)
     return jsonify({'status': 'success', 'result': article})
@@ -80,7 +83,7 @@ def get_joke():
     try:
         joke = helper_functions.get_chuck_norris_joke(request.args.get('firstName'), request.args.get('lastName'))
     except external_api_exceptions.ExternalApiError:
-        return jsonify({'status': 'fail'})
+        return abort('Failed to get joke from resource', 503)
     return jsonify({'status': 'success', 'result': joke})
 
 
