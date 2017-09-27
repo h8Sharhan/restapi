@@ -22,8 +22,7 @@ class AppTestCase(unittest.TestCase):
         self.assertEqual(data.get('status'), 'success')
         self.assertTrue(data.get('result'))
 
-        with patch('helper_functions.get_random_word') as get_random_word_mock:
-            get_random_word_mock.side_effect = external_api_exceptions.ExternalApiFetchError
+        with patch('helper_functions.get_random_word', side_effect=external_api_exceptions.ExternalApiFetchError):
             response = tester.get('/api/v1.0/random_word',
                                   headers={'Authorization': 'Basic %s' % base64.b64encode(bytes("user:qwe123"))})
             self.assertEqual(response.status_code, 503)
@@ -40,8 +39,7 @@ class AppTestCase(unittest.TestCase):
         response = tester.get('/api/v1.0/wiki/Ninjasaur')
         self.assertEqual(response.status_code, 404)
 
-        with patch('helper_functions.get_wiki_article') as get_wiki_article_mock:
-            get_wiki_article_mock.side_effect = external_api_exceptions.ExternalApiFetchError
+        with patch('helper_functions.get_wiki_article', side_effect=external_api_exceptions.ExternalApiFetchError):
             response = tester.get('/api/v1.0/wiki/Ninja')
             self.assertEqual(response.status_code, 503)
 
@@ -80,8 +78,8 @@ class AppTestCase(unittest.TestCase):
         self.assertEqual(data.get('status'), 'success')
         self.assertTrue(data.get('result'))
 
-        with patch('helper_functions.get_chuck_norris_joke') as get_chuck_norris_joke_mock:
-            get_chuck_norris_joke_mock.side_effect = external_api_exceptions.ExternalApiFetchError
+        with patch('helper_functions.get_chuck_norris_joke',
+                   side_effect=external_api_exceptions.ExternalApiFetchError):
             response = tester.get('/api/v1.0/joke')
             self.assertEqual(response.status_code, 503)
 
