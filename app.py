@@ -18,6 +18,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s (%(lineno
                     datefmt='%Y.%m.%d %H:%M:%S')
 
 app = Flask('app')
+# Create collection for wiki requests
+wiki_collection = StatisticCollection()
 
 
 def need_authorization(func):
@@ -88,8 +90,6 @@ def get_joke():
 
 
 if __name__ == '__main__':
-    # Create collection for wiki requests
-    wiki_collection = StatisticCollection()
     atexit.register(wiki_collection.save_collection_to_file)
     # Run app
     app.run()
