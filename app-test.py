@@ -18,6 +18,7 @@ class AppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(data.get('status'), 'success')
+        self.assertTrue(data.get('result'))
 
     def test_wiki(self):
         tester = app.test_client(self)
@@ -26,6 +27,7 @@ class AppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(data.get('status'), 'success')
+        self.assertTrue(data.get('result'))
 
         response = tester.get('/api/v1.0/wiki/Ninjasaur')
         self.assertEqual(response.status_code, 404)
@@ -44,21 +46,25 @@ class AppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(data.get('status'), 'success')
+        self.assertTrue(data.get('result'))
 
         response = tester.get('/api/v1.0/joke?firstName=Vasili')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(data.get('status'), 'success')
+        self.assertTrue(data.get('result'))
 
         response = tester.get('/api/v1.0/joke?lastName=Dou')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(data.get('status'), 'success')
+        self.assertTrue(data.get('result'))
 
         response = tester.get('/api/v1.0/joke?firstName=Vasili&lastName=Dou')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(data.get('status'), 'success')
+        self.assertTrue(data.get('result'))
 
 
 if __name__ == '__main__':
